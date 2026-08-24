@@ -2,6 +2,13 @@
 [build]
   publish = "public"
 
+# Proxy /api requests to Render Flask backend
+[[redirects]]
+  from = "/api/*"
+  to = "https://phishguard-backend-s1sx.onrender.com/api/:splat"
+  status = 200
+  force = true
+
 # Single Page App routing fallback
 [[redirects]]
   from = "/*"

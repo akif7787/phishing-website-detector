@@ -75,14 +75,27 @@ document.addEventListener("DOMContentLoaded", () => {
   // API URL Resolver
   // ==========================================
   function getApiBase() {
+    // 1. Manual user override in localStorage (if customized via API settings)
     const custom = localStorage.getItem("phishguard_backend_url");
     if (custom && custom.trim()) {
       return custom.trim().replace(/\/+$/, "");
     }
+    
+    // 2. Explicit default backend defined in config.js
     if (window.PHISHGUARD_DEFAULT_BACKEND && window.PHISHGUARD_DEFAULT_BACKEND.trim()) {
       return window.PHISHGUARD_DEFAULT_BACKEND.trim().replace(/\/+$/, "");
     }
-    return ""; // Default relative routing
+
+    // 3. Fallback: If on localhost, use local server; if on production, use Render backend directly
+    const isLocalhost = Boolean(
+      window.location.hostname === "localhost" ||
+      window.location.hostname === "127.0.0.1" ||
+      window.location.hostname === "[::1]"
+    );
+    if (isLocalhost) {
+      return "";
+    }
+    return "https://phishguard-backend-s1sx.onrender.com";
   }
 
   // ==========================================
