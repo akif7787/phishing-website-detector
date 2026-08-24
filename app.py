@@ -64,6 +64,14 @@ def serve_js(filename):
     return send_from_directory(folder, filename)
 
 
+@app.route("/guard.png", methods=["GET"])
+@app.route("/favicon.png", methods=["GET"])
+@app.route("/favicon.ico", methods=["GET"])
+def serve_favicon():
+    folder = "public" if os.path.exists("public/guard.png") else "."
+    return send_from_directory(folder, "guard.png", mimetype="image/png")
+
+
 @app.route("/api/analyze", methods=["POST"])
 def analyze_url():
     """
