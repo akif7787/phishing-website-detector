@@ -153,17 +153,37 @@ cp .env.example .env
 
 ---
 
-## 7. Running the Application
+## 7. Running & Deploying the Application
 
+### Local Development
 Start the Flask application server:
 ```bash
 python3 app.py
 ```
+Open your web browser and navigate to: **`http://127.0.0.1:5001`**
 
-Open your web browser and navigate to:
-```
-http://127.0.0.1:5001
-```
+### Deploying to Netlify
+The repository is fully configured for Netlify:
+- **Publish directory:** `public`
+- **Functions directory:** `netlify/functions`
+- **Configuration file:** `netlify.toml`
+- **Redirects:** `public/_redirects`
+
+#### Redeployment Steps on Netlify:
+1. In your Netlify dashboard, open your site settings.
+2. Under **Build & deploy** > **Build settings**:
+   - **Base directory:** *(leave blank or root)*
+   - **Build command:** *(leave blank or `pip install -r requirements.txt`)*
+   - **Publish directory:** `public`
+   - **Functions directory:** `netlify/functions`
+3. Click **Deploy site** (or trigger a new build from your Git repository).
+4. Netlify will serve the frontend from `public/index.html` and automatically execute backend API calls via `netlify/functions/api.py`.
+
+### Deploying to Render / Railway / Heroku (Standalone Backend)
+If you wish to run a dedicated 24/7 Python backend instance:
+- `Procfile` is pre-configured: `web: gunicorn app:app --workers 2 --threads 4 --timeout 60`
+- `render.yaml` is pre-configured for 1-click Render blueprint deployments.
+- In the Netlify dashboard UI, you can connect your custom backend URL in the **API Settings** popup with one click.
 
 ---
 
