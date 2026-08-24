@@ -92,3 +92,16 @@ def test_history_flow(client):
     hist_res2 = client.get("/api/history")
     hist_data2 = json.loads(hist_res2.data)
     assert len(hist_data2["history"]) == 0
+
+
+def test_cors_headers(client):
+    # Test preflight OPTIONS request
+    options_res = client.options("/api/analyze", headers={"Origin": "https://my-phishguard.netlify.app", "Access-Control-Request-Method": "POST"})
+    assert options_res.status_code == 200
+    assert options_res.headers.get("Access-Control-Allow-Origin") in ("*", "https://my-phishguard.netlify.app")
+
+    # Test GET request with Origin
+    health_res = client.get("/api/health", headers={"Origin": "https://my-phishguard.netlify.app"})
+    assert health_res.status_code == 200
+    assert health_res.headers.get("Access-Control-Allow-Origin") in ("*", "https://my-phishguard.netlify.app")
+

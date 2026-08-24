@@ -8,7 +8,8 @@ import os
 from datetime import datetime, timezone
 from typing import Any, Dict
 
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, jsonify, render_template, request, send_from_directory
+from flask_cors import CORS
 
 from analyzer.database import AnalysisDatabase
 from analyzer.dns_analyzer import DNSAnalyzer
@@ -18,15 +19,27 @@ from analyzer.ssl_analyzer import SSLAnalyzer
 from analyzer.ssrf_validator import SSRFValidator
 from analyzer.url_analyzer import URLAnalyzer
 
-# Initialize Flask application
-app = Flask(__name__)
+# Initialize Flask application with public/templates support
+app = Flask(__name__, template_folder="public" if os.path.exists("public/index.html") else "templates", static_folder="static")
 
 # Configuration
 app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "dev-educational-secret-key-2026")
 app.config["JSON_SORT_KEYS"] = False
 app.config["MAX_CONTENT_LENGTH"] = 16 * 1024  # 16 KB request limit to prevent DoS
 
-# Initialize SQLite database
+# Configure CORS for Netlify frontend and cross-origin clients
+cors_origins_env = os.getenv("CORS_ORIGINS", "*")
+allowed_origins = [o.strip() for o in cors_origins_env.split(",") if o.strip()] if cors_origins_env != "*" else "*"
+
+CORS(
+    app,
+    resources={r"/api/*": {"origins": allowed_origins}},
+    methods=["GET", "POST", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
+    supports_credentials=True,
+)
+
+# Initialize SQLite database (supports /tmp path for ephemeral environments)
 DB_PATH = os.getenv("DATABASE_PATH", "analysis_history.db")
 AnalysisDatabase.init_db(DB_PATH)
 
@@ -37,6 +50,18 @@ def index():
     Renders the primary cybersecurity dashboard user interface.
     """
     return render_template("index.html")
+
+
+@app.route("/css/<path:filename>", methods=["GET"])
+def serve_css(filename):
+    folder = "public/css" if os.path.exists("public/css") else "static/css"
+    return send_from_directory(folder, filename)
+
+
+@app.route("/js/<path:filename>", methods=["GET"])
+def serve_js(filename):
+    folder = "public/js" if os.path.exists("public/js") else "static/js"
+    return send_from_directory(folder, filename)
 
 
 @app.route("/api/analyze", methods=["POST"])

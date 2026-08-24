@@ -79,6 +79,9 @@ document.addEventListener("DOMContentLoaded", () => {
     if (custom && custom.trim()) {
       return custom.trim().replace(/\/+$/, "");
     }
+    if (window.PHISHGUARD_DEFAULT_BACKEND && window.PHISHGUARD_DEFAULT_BACKEND.trim()) {
+      return window.PHISHGUARD_DEFAULT_BACKEND.trim().replace(/\/+$/, "");
+    }
     return ""; // Default relative routing
   }
 

@@ -1,12 +1,8 @@
+# Netlify Configuration for PhishGuard Static Frontend
 [build]
   publish = "public"
-  functions = "netlify/functions"
 
-[[redirects]]
-  from = "/api/*"
-  to = "/.netlify/functions/api/:splat"
-  status = 200
-
+# Single Page App routing fallback
 [[redirects]]
   from = "/*"
   to = "/index.html"
