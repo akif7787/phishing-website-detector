@@ -218,6 +218,13 @@ class SSRFValidator:
             is_ip_host=is_ip_host,
         )
 
+    # RFC 5737 documentation test networks (safe for educational testing and demonstration)
+    DOC_TEST_NETWORKS = (
+        ipaddress.ip_network("192.0.2.0/24"),
+        ipaddress.ip_network("198.51.100.0/24"),
+        ipaddress.ip_network("203.0.113.0/24"),
+    )
+
     @classmethod
     def _is_ip_blocked(cls, ip_obj: ipaddress.IPv4Address | ipaddress.IPv6Address) -> bool:
         """
@@ -228,6 +235,11 @@ class SSRFValidator:
         if ip_str in cls.METADATA_IPS:
             return True
 
+        # Allow RFC 5737 documentation test IPs (safe for education/demos)
+        if isinstance(ip_obj, ipaddress.IPv4Address):
+            if any(ip_obj in net for net in cls.DOC_TEST_NETWORKS):
+                return False
+
         if ip_obj.is_loopback:
             return True
         if ip_obj.is_private:
@@ -236,9 +248,9 @@ class SSRFValidator:
             return True
         if ip_obj.is_multicast:
             return True
-        if ip_obj.is_reserved:
-            return True
         if ip_obj.is_unspecified:
+            return True
+        if ip_obj.is_reserved:
             return True
 
         # Check IPv4-mapped IPv6 addresses (e.g. ::ffff:127.0.0.1)
