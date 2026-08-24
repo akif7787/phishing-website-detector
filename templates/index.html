@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Modern, explainable phishing website detection and URL security inspection tool.">
+  <title>PhishGuard | Phishing Website Detection System</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+  <!-- Header -->
+  <header class="cyber-header">
+    <div class="header-container">
+      <div class="brand-group">
+        <div class="brand-logo">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            <path d="m9 12 2 2 4-4"/>
+          </svg>
+        </div>
+        <div>
+          <h1 class="brand-title">PhishGuard <span class="badge-tag">ENGINE v1.0</span></h1>
+          <p class="brand-subtitle">Explainable Phishing Website Detection & URL Security Intelligence</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <div class="status-indicator">
+          <span class="pulse-dot"></span>
+          <span class="status-text">SSRF Protected</span>
+        </div>
+        <button id="btn-toggle-history" class="btn btn-secondary" title="View scan history">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+          </svg>
+          History <span id="history-count-badge" class="counter-badge">0</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Container -->
+  <main class="main-container">
+    
+    <!-- URL Analyzer Input Card -->
+    <section class="card analyzer-card">
+      <div class="analyzer-header">
+        <h2>Inspect & Analyze URL</h2>
+        <p>Submit any website URL or domain to evaluate phishing indicators, domain age, SSL status, and heuristic risk.</p>
+      </div>
+
+      <form id="analyzer-form" class="analyzer-form">
+        <div class="input-wrapper">
+          <span class="input-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+            </svg>
+          </span>
+          <input 
+            type="text" 
+            id="url-input" 
+            name="url" 
+            placeholder="e.g., https://example.com or suspicious-login.verify-account.xyz" 
+            autocomplete="off"
+            spellcheck="false"
+            required
+          >
+          <button type="button" id="btn-clear-input" class="btn-icon-clear" title="Clear input" style="display: none;">
+            &times;
+          </button>
+          <button type="submit" id="btn-analyze" class="btn btn-primary">
+            <span class="btn-text">Analyze URL</span>
+            <svg class="btn-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="9 18 15 12 9 6"/>
+            </svg>
+          </button>
+        </div>
+      </form>
+
+      <!-- Preset Sample Test Buttons -->
+      <div class="preset-section">
+        <span class="preset-label">Test Samples:</span>
+        <button class="btn-preset" data-url="https://google.com">Safe: Google</button>
+        <button class="btn-preset" data-url="http://198.51.100.24/auth/login.php">Phishing: Raw IP Host</button>
+        <button class="btn-preset" data-url="http://secure-paypal-login.update-account-verification.xyz/verify">Phishing: Brand Spoofing</button>
+        <button class="btn-preset" data-url="http://system-update.cloud/urgent-invoice.exe">Malware: Executable Path</button>
+      </div>
+
+      <!-- Live Loading State -->
+      <div id="loading-container" class="loading-container" style="display: none;">
+        <div class="radar-spinner">
+          <div class="radar-sweep"></div>
+        </div>
+        <div class="loading-details">
+          <h4 id="loading-step-title">Inspecting Security Metrics...</h4>
+          <p id="loading-step-desc">Resolving DNS records, checking WHOIS domain age, and parsing TLS certificate.</p>
+        </div>
+      </div>
+
+      <!-- Error State Banner -->
+      <div id="error-banner" class="alert-banner alert-error" style="display: none;">
+        <div class="alert-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+        </div>
+        <div class="alert-content">
+          <strong id="error-title">Analysis Error</strong>
+          <p id="error-message">Invalid URL provided.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Analysis Results Section (Shown after scan) -->
+    <section id="results-section" class="results-section" style="display: none;">
+      
+      <!-- Primary Score Overview Card -->
+      <div class="card score-hero-card">
+        <div class="score-card-grid">
+          
+          <!-- Gauge & Score Column -->
+          <div class="gauge-column">
+            <div class="gauge-wrapper">
+              <svg class="score-gauge" viewBox="0 0 200 130">
+                <!-- Background Arc -->
+                <path d="M 20 110 A 80 80 0 0 1 180 110" fill="none" stroke="#2a334a" stroke-width="16" stroke-linecap="round"/>
+                <!-- Colored Progress Arc -->
+                <path id="gauge-progress" d="M 20 110 A 80 80 0 0 1 180 110" fill="none" stroke="#10b981" stroke-width="16" stroke-linecap="round" stroke-dasharray="251.3" stroke-dashoffset="251.3"/>
+              </svg>
+              <div class="gauge-center-text">
+                <span id="score-number" class="score-number">0</span>
+                <span class="score-total">/ 100</span>
+              </div>
+            </div>
+            <div class="risk-badge-wrapper">
+              <span id="risk-badge" class="risk-badge badge-safe">LIKELY SAFE</span>
+            </div>
+          </div>
+
+          <!-- Metadata & Summary Column -->
+          <div class="summary-column">
+            <div class="meta-tags-row">
+              <span class="meta-tag" id="meta-scheme">HTTPS</span>
+              <span class="meta-tag" id="meta-domain">example.com</span>
+              <span class="meta-tag meta-tag-time" id="meta-time">Just now</span>
+            </div>
+            <h3 class="target-url-title" id="target-url-display">https://example.com</h3>
+            <p class="target-summary-text" id="target-summary-text">
+              The submitted website shows standard structural characteristics with no high-risk indicators.
+            </p>
+
+            <div class="action-buttons-group">
+              <button id="btn-copy-report" class="btn btn-sm btn-outline">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                </svg>
+                Copy Assessment
+              </button>
+              <button id="btn-export-json" class="btn btn-sm btn-outline">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+                Export JSON
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Actionable Guidance Box -->
+      <div id="guidance-card" class="card guidance-card">
+        <div class="guidance-header">
+          <div class="guidance-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+          </div>
+          <h4>Actionable Recommendations & Safety Advice</h4>
+        </div>
+        <ul id="recommendations-list" class="guidance-list">
+          <!-- Populated dynamically -->
+        </ul>
+      </div>
+
+      <!-- Explainable Security Indicators -->
+      <div class="card indicators-card">
+        <div class="card-title-row">
+          <h3>
+            Security Indicators & Risk Contribution
+            <span id="indicator-counter" class="pill-counter">0 Detected</span>
+          </h3>
+          <span class="scoring-note">Transparent 0–100 Rule Breakdown</span>
+        </div>
+
+        <div id="indicators-list" class="indicators-list">
+          <!-- Populated dynamically -->
+        </div>
+
+        <!-- Positive Trust Factors Section -->
+        <div id="positive-factors-wrapper" class="positive-factors-wrapper" style="display: none;">
+          <h4 class="positive-title">Positive Trust Signals:</h4>
+          <div id="positive-factors-list" class="positive-factors-list">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Detailed Deep-Dive Tabs -->
+      <div class="card tabs-card">
+        <div class="tabs-header">
+          <button class="tab-btn active" data-tab="tab-url">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+            </svg>
+            URL Characteristics
+          </button>
+          <button class="tab-btn" data-tab="tab-domain">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>
+            Domain & WHOIS
+          </button>
+          <button class="tab-btn" data-tab="tab-ssl">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+            SSL / TLS Certificate
+          </button>
+          <button class="tab-btn" data-tab="tab-dns">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/>
+            </svg>
+            DNS & Network
+          </button>
+        </div>
+
+        <div class="tabs-body">
+          <!-- Tab 1: URL Structure -->
+          <div id="tab-url" class="tab-pane active">
+            <div class="data-grid" id="url-metrics-grid">
+              <!-- Populated dynamically -->
+            </div>
+          </div>
+
+          <!-- Tab 2: Domain / WHOIS -->
+          <div id="tab-domain" class="tab-pane">
+            <div class="data-grid" id="domain-metrics-grid">
+              <!-- Populated dynamically -->
+            </div>
+          </div>
+
+          <!-- Tab 3: SSL / TLS -->
+          <div id="tab-ssl" class="tab-pane">
+            <div class="ssl-notice-box">
+              <div class="notice-icon">💡</div>
+              <div class="notice-text">
+                <strong>Important Security Note:</strong> HTTPS ensures encrypted transit against eavesdropping, but does <em>NOT</em> prove a website is legitimate. Over 60% of modern phishing websites utilize valid, free SSL certificates.
+              </div>
+            </div>
+            <div class="data-grid" id="ssl-metrics-grid">
+              <!-- Populated dynamically -->
+            </div>
+          </div>
+
+          <!-- Tab 4: DNS -->
+          <div id="tab-dns" class="tab-pane">
+            <div class="data-grid" id="dns-metrics-grid">
+              <!-- Populated dynamically -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- Scan History Drawer / Modal -->
+  <div id="history-drawer" class="history-drawer">
+    <div class="drawer-backdrop" id="history-backdrop"></div>
+    <div class="drawer-panel">
+      <div class="drawer-header">
+        <div class="drawer-title-group">
+          <h3>Analysis History</h3>
+          <span class="drawer-subtitle">Locally stored recent URL scans</span>
+        </div>
+        <div class="drawer-actions">
+          <button id="btn-clear-history" class="btn btn-sm btn-danger-outline" title="Clear all history">Clear</button>
+          <button id="btn-close-drawer" class="btn-icon-close" title="Close drawer">&times;</button>
+        </div>
+      </div>
+      <div class="drawer-content">
+        <div id="history-list" class="history-list">
+          <!-- Populated dynamically -->
+        </div>
+        <div id="history-empty" class="history-empty" style="display: none;">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+          </svg>
+          <p>No scans recorded yet.</p>
+          <span>Submitted analyses will appear here.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Educational Disclaimer Footer -->
+  <footer class="cyber-footer">
+    <div class="footer-container">
+      <p class="disclaimer-text">
+        🔒 <strong>Educational & Research Purpose Only:</strong> Automated analysis evaluates probabilistic heuristic patterns and metadata. It is not an absolute guarantee of safety or maliciousness. Always exercise manual vigilance when handling untrusted URLs.
+      </p>
+      <p class="copyright-text">
+        PhishGuard Security Analyzer • Built with Python & Flask • Safe Sandbox Enforced
+      </p>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="/static/js/app.js"></script>
+</body>
+</html>
